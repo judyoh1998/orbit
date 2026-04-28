@@ -115,10 +115,6 @@ export function Background() {
     let velX = 0
     let velY = 0
 
-    // Smoothed cursor offset from screen center, used to parallax the photo.
-    let photoOffX = 0
-    let photoOffY = 0
-
     const onPointerMove = (e: PointerEvent) => {
       mouseX = e.clientX
       mouseY = e.clientY
@@ -143,25 +139,18 @@ export function Background() {
       lastSampleY = smoothMY
       const speed = Math.hypot(velX, velY)
 
-      // Parallax the photo opposite the cursor — like the image is parting.
-      // Magnitude scales with both cursor offset and speed, smoothed heavily.
-      const ox = (smoothMX - width * 0.5) / width
-      const oy = (smoothMY - height * 0.5) / height
-      const targetPX = -ox * 22 - (velX * 0.04)
-      const targetPY = -oy * 22 - (velY * 0.04)
-      photoOffX += (targetPX - photoOffX) * Math.min(1, dt * 3)
-      photoOffY += (targetPY - photoOffY) * Math.min(1, dt * 3)
-      // Slow ambient drift baked into the transform so motion never stops.
+      // Photo + haze: ambient drift only — they should never react to the cursor.
+      // Only the canvas overlay below parts around the pointer.
       const driftX = Math.sin(t * 0.07) * 18
       const driftY = Math.cos(t * 0.05) * 14
       const breathe = 1.06 + Math.sin(t * 0.13) * 0.015
       photo.style.transform =
-        `translate3d(${photoOffX + driftX}px, ${photoOffY + driftY}px, 0) scale(${breathe})`
+        `translate3d(${driftX}px, ${driftY}px, 0) scale(${breathe})`
       const hazeDriftX = Math.sin(t * 0.11 + 1.3) * 22
       const hazeDriftY = Math.cos(t * 0.09 + 0.7) * 18
       const hazeScale = 1.04 + Math.sin(t * 0.17 + 2) * 0.02
       haze.style.transform =
-        `translate3d(${photoOffX * 1.6 + hazeDriftX}px, ${photoOffY * 1.6 + hazeDriftY}px, 0) scale(${hazeScale})`
+        `translate3d(${hazeDriftX}px, ${hazeDriftY}px, 0) scale(${hazeScale})`
 
       // Clear canvas (alpha so the photo behind shows through).
       ctx.clearRect(0, 0, width, height)
