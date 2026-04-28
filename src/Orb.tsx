@@ -9,8 +9,8 @@ type Props = {
   onDrag: (x: number, y: number) => void
 }
 
-const ORB_SIZE_PX = 220
-const BLUR_PX = 24
+const ORB_SIZE_PX = 260
+const BLUR_PX = 30
 
 export function Orb({ x, y, width, height, onDrag }: Props) {
   const audioRef = useRef<OrbAudio | null>(null)
@@ -65,8 +65,9 @@ export function Orb({ x, y, width, height, onDrag }: Props) {
         height: ORB_SIZE_PX,
         borderRadius: '50%',
         background:
-          'radial-gradient(circle at 50% 50%, rgba(180,210,255,0.85) 0%, rgba(120,150,220,0.45) 35%, rgba(80,100,180,0.15) 65%, rgba(0,0,0,0) 80%)',
-        filter: `blur(${BLUR_PX}px)`,
+          'radial-gradient(circle at 50% 50%, rgba(245,250,255,1) 0%, rgba(220,235,255,0.95) 14%, rgba(180,215,255,0.75) 30%, rgba(140,185,250,0.45) 48%, rgba(100,150,230,0.22) 66%, rgba(70,110,200,0.08) 82%, rgba(0,0,0,0) 95%)',
+        filter: `blur(${BLUR_PX}px) saturate(1.1)`,
+        mixBlendMode: 'screen',
         pointerEvents: 'auto',
         touchAction: 'none',
         willChange: 'transform, left, top',

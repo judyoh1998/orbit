@@ -32,6 +32,14 @@ export function App() {
 
   return (
     <div className="canvas">
+      <div className="background" aria-hidden="true">
+        <div className="background-drift">
+          <div className="background-sway">
+            <div className="background-image" />
+          </div>
+        </div>
+        <div className="background-tint" />
+      </div>
       <Orb
         x={orb.x}
         y={orb.y}

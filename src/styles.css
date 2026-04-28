@@ -27,6 +27,73 @@ body {
   height: 100vh;
   touch-action: none;
   cursor: crosshair;
+  background: #06060a;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.background-drift,
+.background-sway {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.background-drift {
+  animation: bg-drift 78s ease-in-out infinite alternate;
+}
+
+.background-sway {
+  animation: bg-sway 13s ease-in-out infinite alternate;
+}
+
+.background-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('https://cdnb.artstation.com/p/assets/images/images/063/740/477/large/michal-kvac-astro-ambient-small.jpg?1686236449');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  filter: blur(10px) brightness(0.78) saturate(1.05);
+  transform: scale(1.14);
+}
+
+.background-tint {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 60%, rgba(8, 10, 22, 0) 0%, rgba(6, 6, 12, 0.35) 70%, rgba(4, 4, 8, 0.55) 100%);
+  pointer-events: none;
+}
+
+@keyframes bg-drift {
+  0% {
+    transform: translate3d(-1.8%, -0.9%, 0);
+  }
+  100% {
+    transform: translate3d(1.8%, 0.9%, 0);
+  }
+}
+
+@keyframes bg-sway {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0.35%, -0.25%, 0) scale(1.004);
+  }
+  100% {
+    transform: translate3d(-0.25%, 0.35%, 0) scale(1.002);
+  }
 }
 
 .hint {
@@ -38,9 +105,10 @@ body {
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(220, 220, 240, 0.35);
+  color: rgba(220, 220, 240, 0.55);
   pointer-events: none;
   transition: opacity 600ms ease;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
 }
 
 .hint.hidden {
