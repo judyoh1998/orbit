@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Orb } from './Orb'
+import { Background } from './Background'
 import { ensureAudioStarted, pickRandomPreset, type Preset } from './audio'
 
 const MAX_ORBS = 5
@@ -90,7 +91,7 @@ export function App() {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      <div className="bg" aria-hidden="true" />
+      <Background />
       {orbs.map(orb => (
         <Orb
           key={orb.id}

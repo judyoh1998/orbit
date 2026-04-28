@@ -4,7 +4,7 @@ html, body, #root {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: #06060a;
+  background: #050409;
   color: #d8d8e0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -15,7 +15,7 @@ html, body, #root {
 }
 
 body {
-  background: #06060a;
+  background: #050409;
 }
 
 .canvas {
@@ -25,59 +25,17 @@ body {
   height: 100vh;
   touch-action: none;
   cursor: crosshair;
-  background: #06060a;
+  background: #050409;
 }
 
-.bg {
+.bg-canvas {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 0;
-}
-
-.bg::before,
-.bg::after {
-  content: '';
-  position: absolute;
-  inset: -8%;
-  background-image: url('https://cdnb.artstation.com/p/assets/images/images/063/740/477/large/michal-kvac-astro-ambient-small.jpg?1686236449');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  will-change: transform, filter;
-}
-
-/* Base image — soft haze, slow cloud-like drift across the scene */
-.bg::before {
-  filter: blur(3px) saturate(1.1) brightness(0.72);
-  animation: bg-drift 90s ease-in-out infinite alternate;
-}
-
-/* Shimmer layer — heat-haze / breath-on-glass, very gentle additive sway */
-.bg::after {
-  filter: blur(26px) brightness(1.15);
-  opacity: 0.55;
-  mix-blend-mode: screen;
-  animation: bg-shimmer 17s ease-in-out infinite alternate;
-}
-
-@keyframes bg-drift {
-  0%   { transform: translate3d(-1.5%, -1%, 0) scale(1.06); }
-  100% { transform: translate3d(2%,    1.2%, 0) scale(1.09); }
-}
-
-@keyframes bg-shimmer {
-  0%   { transform: translate3d(0,      0,    0) scale(1.02); filter: blur(24px) brightness(1.08); }
-  50%  { transform: translate3d(0.6%,  -0.4%, 0) scale(1.045); filter: blur(30px) brightness(1.18); }
-  100% { transform: translate3d(-0.5%,  0.5%, 0) scale(1.025); filter: blur(26px) brightness(1.10); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bg::before,
-  .bg::after {
-    animation: none;
-  }
+  display: block;
 }
 
 .hint {
