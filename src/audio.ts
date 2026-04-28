@@ -9,7 +9,7 @@ const SAMPLE_LOOP_CROSSFADE_S = 0.5 // fade-in/fade-out applied to each loop ite
 const REVERB_DECAY_S = 4
 const REVERB_WET = 0.4
 
-export type Preset = 'air' | 'static' | 'bells' | 'water' | 'drift'
+export type Preset = 'air' | 'static' | 'bells' | 'water'
 
 type SynthPreset = {
   kind: 'synth'
@@ -32,10 +32,9 @@ export const PRESETS: Record<Preset, PresetConfig> = {
   static: { kind: 'synth',  noise: 'white', Q: 0.3, color: '200, 160, 240' }, // purple
   bells:  { kind: 'sample', url: '/bells.mp3', Q: 0.7, color: '220, 200, 255' }, // pale lavender
   water:  { kind: 'sample', url: '/water.mp3', Q: 0.7, color: '100, 200, 220' }, // deep teal
-  drift:  { kind: 'sample', url: '/drift.mp3', Q: 0.7, color: '230, 180, 200' }, // rose gold
 }
 
-const PRESET_NAMES: Preset[] = ['air', 'static', 'bells', 'water', 'drift']
+const PRESET_NAMES: Preset[] = ['air', 'static', 'bells', 'water']
 
 export function pickRandomPreset(): Preset {
   return PRESET_NAMES[Math.floor(Math.random() * PRESET_NAMES.length)]
