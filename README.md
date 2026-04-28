@@ -1,1 +1,1 @@
-# orbit
+Build an ambient audio toy. React + Vite + TypeScript + Tone.js. One file per orb concern (audio, gesture, visual). Start with one orb that makes a filtered noise sound when dragged — X pans, Y sweeps the filter cutoff. Get that feeling right before adding anything else. When you finish that, stop and let me listen.
