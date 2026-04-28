@@ -58,11 +58,15 @@ function makeBlobs(width: number, height: number, count: number): Blob[] {
 
 export function Background() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const photoRef = useRef<HTMLDivElement | null>(null)
+  const hazeRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d', { alpha: false })
+    const photo = photoRef.current
+    const haze = hazeRef.current
+    if (!canvas || !photo || !haze) return
+    const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) return
 
     const reduced =
@@ -89,7 +93,6 @@ export function Background() {
       canvas.style.height = `${height}px`
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       const next = makeBlobs(width, height, blobCountForSize(width, height))
-      // Preserve continuity if we already had blobs
       if (blobs.length) {
         for (let i = 0; i < Math.min(blobs.length, next.length); i++) {
           next[i].x = blobs[i].x
@@ -111,22 +114,17 @@ export function Background() {
     let lastSampleY = mouseY
     let velX = 0
     let velY = 0
-    let cursorActive = false
-    let lastMoveAt = 0
+
+    // Smoothed cursor offset from screen center, used to parallax the photo.
+    let photoOffX = 0
+    let photoOffY = 0
 
     const onPointerMove = (e: PointerEvent) => {
       mouseX = e.clientX
       mouseY = e.clientY
-      cursorActive = true
-      lastMoveAt = performance.now()
-    }
-    const onPointerLeave = () => {
-      cursorActive = false
     }
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerdown', onPointerMove, { passive: true })
-    window.addEventListener('pointerleave', onPointerLeave)
-    document.addEventListener('mouseleave', onPointerLeave)
 
     let raf = 0
     let lastFrame = performance.now()
@@ -136,44 +134,44 @@ export function Background() {
       lastFrame = now
       const t = now / 1000
 
-      // Smooth mouse position so velocity isn't jittery between frames.
       smoothMX += (mouseX - smoothMX) * Math.min(1, dt * 18)
       smoothMY += (mouseY - smoothMY) * Math.min(1, dt * 18)
 
-      // Velocity from smoothed samples (px/sec).
       velX = (smoothMX - lastSampleX) / dt
       velY = (smoothMY - lastSampleY) / dt
       lastSampleX = smoothMX
       lastSampleY = smoothMY
       const speed = Math.hypot(velX, velY)
 
-      // Idle decay: if cursor hasn't moved for a beat, drop "active" state.
-      if (cursorActive && now - lastMoveAt > 180) cursorActive = false
+      // Parallax the photo opposite the cursor — like the image is parting.
+      // Magnitude scales with both cursor offset and speed, smoothed heavily.
+      const ox = (smoothMX - width * 0.5) / width
+      const oy = (smoothMY - height * 0.5) / height
+      const targetPX = -ox * 22 - (velX * 0.04)
+      const targetPY = -oy * 22 - (velY * 0.04)
+      photoOffX += (targetPX - photoOffX) * Math.min(1, dt * 3)
+      photoOffY += (targetPY - photoOffY) * Math.min(1, dt * 3)
+      // Slow ambient drift baked into the transform so motion never stops.
+      const driftX = Math.sin(t * 0.07) * 18
+      const driftY = Math.cos(t * 0.05) * 14
+      const breathe = 1.06 + Math.sin(t * 0.13) * 0.015
+      photo.style.transform =
+        `translate3d(${photoOffX + driftX}px, ${photoOffY + driftY}px, 0) scale(${breathe})`
+      const hazeDriftX = Math.sin(t * 0.11 + 1.3) * 22
+      const hazeDriftY = Math.cos(t * 0.09 + 0.7) * 18
+      const hazeScale = 1.04 + Math.sin(t * 0.17 + 2) * 0.02
+      haze.style.transform =
+        `translate3d(${photoOffX * 1.6 + hazeDriftX}px, ${photoOffY * 1.6 + hazeDriftY}px, 0) scale(${hazeScale})`
 
-      // Deep nebula backdrop — slow radial wash that itself drifts.
-      const cx = width * 0.5 + Math.sin(t * 0.07) * width * 0.12
-      const cy = height * 0.55 + Math.cos(t * 0.05) * height * 0.1
-      const grad = ctx.createRadialGradient(
-        cx, cy, 0,
-        cx, cy, Math.hypot(width, height) * 0.7,
-      )
-      const baseHue = (240 + Math.sin(t * 0.04) * 30) % 360
-      grad.addColorStop(0, `hsl(${baseHue}, 45%, 9%)`)
-      grad.addColorStop(0.55, `hsl(${(baseHue + 30) % 360}, 50%, 5%)`)
-      grad.addColorStop(1, '#020108')
-      ctx.fillStyle = grad
-      ctx.fillRect(0, 0, width, height)
+      // Clear canvas (alpha so the photo behind shows through).
+      ctx.clearRect(0, 0, width, height)
 
-      // Additive blobs — additive blending = soft luminous gas.
       ctx.globalCompositeOperation = 'lighter'
 
-      // The "thick liquid" feel comes from: high damping + strong spring back
-      // to the home wander point, plus a cursor repulsion that scales with speed.
       const repelBase = Math.min(width, height) * 0.22
       const repelRadius = repelBase + speed * 0.45
 
       for (const b of blobs) {
-        // Idle wander: each blob orbits its home with a unique lissajous.
         const wx =
           b.hx * width +
           Math.sin(t * b.freqA + b.phaseA) * b.ampA +
@@ -183,20 +181,17 @@ export function Background() {
           Math.cos(t * b.freqB + b.phaseB) * b.ampB +
           Math.cos(t * b.freqB * 2.1 + b.phaseA) * b.ampB * 0.4
 
-        // Spring toward wander point.
         const sx = wx - b.x
         const sy = wy - b.y
         b.vx += sx * 6.0 * dt
         b.vy += sy * 6.0 * dt
 
-        // Cursor repulsion — quadratic falloff, plus a wake bias along velocity.
         const dx = b.x - smoothMX
         const dy = b.y - smoothMY
         const dist = Math.hypot(dx, dy)
         if (dist < repelRadius && dist > 0.001) {
           const fall = 1 - dist / repelRadius
           const f2 = fall * fall
-          // Static cursor still parts the field a little (like a finger in honey).
           const idleStrength = 320
           const moveStrength = speed * 1.4
           const force = f2 * (idleStrength + moveStrength)
@@ -204,7 +199,6 @@ export function Background() {
           const ny = dy / dist
           b.vx += nx * force * dt
           b.vy += ny * force * dt
-          // Wake: push blobs forward in the direction the cursor is heading.
           if (speed > 50) {
             const wakeF = f2 * speed * 0.55
             b.vx += (velX / speed) * wakeF * dt
@@ -212,14 +206,12 @@ export function Background() {
           }
         }
 
-        // Heavy viscous damping — this is what makes it feel like syrup.
-        const damp = Math.pow(0.06, dt) // ≈ exp(-2.8/sec)
+        const damp = Math.pow(0.06, dt)
         b.vx *= damp
         b.vy *= damp
         b.x += b.vx * dt
         b.y += b.vy * dt
 
-        // Pulsation — multi-octave so it feels organic, not clock-like.
         const pulse =
           1 +
           b.pulseDepth * Math.sin(t * b.pulseRate + b.pulsePhase) +
@@ -228,9 +220,9 @@ export function Background() {
 
         const hue = (b.hue + Math.sin(t * 0.1 + b.pulsePhase) * b.hueDrift + 360) % 360
         const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r)
-        g.addColorStop(0, `hsla(${hue}, 85%, 62%, ${b.alpha})`)
-        g.addColorStop(0.35, `hsla(${(hue + 18) % 360}, 90%, 48%, ${b.alpha * 0.45})`)
-        g.addColorStop(0.7, `hsla(${(hue + 32) % 360}, 90%, 30%, ${b.alpha * 0.12})`)
+        g.addColorStop(0, `hsla(${hue}, 85%, 62%, ${b.alpha * 0.7})`)
+        g.addColorStop(0.35, `hsla(${(hue + 18) % 360}, 90%, 48%, ${b.alpha * 0.32})`)
+        g.addColorStop(0.7, `hsla(${(hue + 32) % 360}, 90%, 30%, ${b.alpha * 0.08})`)
         g.addColorStop(1, `hsla(${hue}, 90%, 20%, 0)`)
         ctx.fillStyle = g
         ctx.beginPath()
@@ -240,7 +232,7 @@ export function Background() {
 
       ctx.globalCompositeOperation = 'source-over'
 
-      // Subtle vignette to push the eye toward the center & deepen edges.
+      // Soft vignette so edges fall into the dark.
       const vg = ctx.createRadialGradient(
         width * 0.5, height * 0.5, Math.min(width, height) * 0.3,
         width * 0.5, height * 0.5, Math.max(width, height) * 0.75,
@@ -254,7 +246,6 @@ export function Background() {
     }
 
     if (reduced) {
-      // Honor reduced-motion: paint a single static frame.
       tick(performance.now())
       cancelAnimationFrame(raf)
     } else {
@@ -266,10 +257,14 @@ export function Background() {
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerdown', onPointerMove)
-      window.removeEventListener('pointerleave', onPointerLeave)
-      document.removeEventListener('mouseleave', onPointerLeave)
     }
   }, [])
 
-  return <canvas ref={canvasRef} className="bg-canvas" aria-hidden="true" />
+  return (
+    <div className="bg" aria-hidden="true">
+      <div ref={photoRef} className="bg-photo" />
+      <div ref={hazeRef} className="bg-haze" />
+      <canvas ref={canvasRef} className="bg-canvas" />
+    </div>
+  )
 }
