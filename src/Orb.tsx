@@ -1,29 +1,28 @@
 import { useEffect, useRef } from 'react'
-import { createOrbAudio, ensureAudioStarted, type OrbAudio } from './audio'
+import { createOrbAudio, PRESETS, type OrbAudio, type Preset } from './audio'
 
 type Props = {
   x: number
   y: number
   width: number
   height: number
-  onDrag: (x: number, y: number) => void
+  preset: Preset
 }
 
 const ORB_SIZE_PX = 220
 const BLUR_PX = 24
 
-export function Orb({ x, y, width, height, onDrag }: Props) {
+export function Orb({ x, y, width, height, preset }: Props) {
   const audioRef = useRef<OrbAudio | null>(null)
-  const draggingRef = useRef(false)
 
   useEffect(() => {
-    const audio = createOrbAudio()
+    const audio = createOrbAudio(preset)
     audioRef.current = audio
     return () => {
       audio.dispose()
       audioRef.current = null
     }
-  }, [])
+  }, [preset])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -34,29 +33,10 @@ export function Orb({ x, y, width, height, onDrag }: Props) {
     audio.setCutoff01(yNorm)
   }, [x, y, width, height])
 
-  const handlePointerDown = async (e: React.PointerEvent<HTMLDivElement>) => {
-    e.stopPropagation()
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-    draggingRef.current = true
-    await ensureAudioStarted()
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return
-    onDrag(e.clientX, e.clientY)
-  }
-
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    draggingRef.current = false
-    ;(e.target as HTMLElement).releasePointerCapture?.(e.pointerId)
-  }
+  const rgb = PRESETS[preset].color
 
   return (
     <div
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
       style={{
         position: 'absolute',
         left: x - ORB_SIZE_PX / 2,
@@ -65,9 +45,9 @@ export function Orb({ x, y, width, height, onDrag }: Props) {
         height: ORB_SIZE_PX,
         borderRadius: '50%',
         background:
-          'radial-gradient(circle at 50% 50%, rgba(180,210,255,0.85) 0%, rgba(120,150,220,0.45) 35%, rgba(80,100,180,0.15) 65%, rgba(0,0,0,0) 80%)',
+          `radial-gradient(circle at 50% 50%, rgba(${rgb}, 0.85) 0%, rgba(${rgb}, 0.45) 35%, rgba(${rgb}, 0.15) 65%, rgba(0, 0, 0, 0) 80%)`,
         filter: `blur(${BLUR_PX}px)`,
-        pointerEvents: 'auto',
+        pointerEvents: 'none', // canvas handles all gestures so it can decide pickup vs spawn
         touchAction: 'none',
         willChange: 'transform, left, top',
       }}
