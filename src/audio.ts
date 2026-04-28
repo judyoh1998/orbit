@@ -106,6 +106,13 @@ function createSampleOrb(cfg: SamplePreset): OrbAudio {
     fadeIn: SAMPLE_LOOP_CROSSFADE_S,
     fadeOut: SAMPLE_LOOP_CROSSFADE_S,
     volume: SAMPLE_VOLUME_DB,
+    // Don't let an orb spawn play a sample that hasn't decoded yet.
+    onload: () => {
+      if (!disposed) player.start()
+    },
+    onerror: (err) => {
+      console.error(`[orbit] failed to load ${cfg.url}:`, err)
+    },
   })
   const filter = new Tone.Filter({ type: 'lowpass', frequency: FILTER_MIN_HZ, Q: cfg.Q })
   const panner = new Tone.Panner(0)
@@ -113,12 +120,6 @@ function createSampleOrb(cfg: SamplePreset): OrbAudio {
   player.connect(filter)
   filter.connect(panner)
   panner.connect(getSharedReverb())
-
-  // Don't let an orb spawn play a sample that hasn't decoded yet.
-  Tone.loaded().then(() => {
-    if (disposed) return
-    player.start()
-  })
 
   return {
     setPan(pan: number) {
