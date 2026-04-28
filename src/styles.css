@@ -41,25 +41,42 @@ body {
   content: '';
   position: absolute;
   inset: -8%;
-  background-image: url('https://cdnb.artstation.com/p/assets/images/images/063/740/477/large/michal-kvac-astro-ambient-small.jpg?1686236449');
-  background-size: cover;
-  background-position: center;
   background-repeat: no-repeat;
-  will-change: transform, filter;
+  will-change: transform, filter, opacity, background-position;
 }
 
 /* Base image — soft haze, slow cloud-like drift across the scene */
 .bg::before {
+  background-image: url('https://cdnb.artstation.com/p/assets/images/images/063/740/477/large/michal-kvac-astro-ambient-small.jpg?1686236449');
+  background-size: cover;
+  background-position: center;
   filter: blur(3px) saturate(1.1) brightness(0.72);
   animation: bg-drift 90s ease-in-out infinite alternate;
 }
 
-/* Shimmer layer — heat-haze / breath-on-glass, very gentle additive sway */
+/*
+ * Shimmer / haze layer — three soft "wisp" gradients screen-blended into a
+ * blurred copy of the image. Each property animates on its own clock so the
+ * layers slip in and out of phase: the layer warps, the haze breathes
+ * (opacity), and the wisps drift across the frame independently of the photo
+ * underneath.
+ */
 .bg::after {
+  background-image:
+    radial-gradient(ellipse 65% 45% at 25% 35%, rgba(190, 210, 255, 0.18), transparent 62%),
+    radial-gradient(ellipse 55% 40% at 78% 65%, rgba(255, 220, 195, 0.16), transparent 64%),
+    radial-gradient(ellipse 45% 35% at 55% 18%, rgba(225, 230, 255, 0.12), transparent 60%),
+    url('https://cdnb.artstation.com/p/assets/images/images/063/740/477/large/michal-kvac-astro-ambient-small.jpg?1686236449');
+  background-size: 160% 160%, 180% 180%, 140% 140%, cover;
+  background-position: 0% 0%, 100% 100%, 50% 0%, center;
+  background-blend-mode: screen, screen, screen, normal;
   filter: blur(26px) brightness(1.15);
-  opacity: 0.55;
   mix-blend-mode: screen;
-  animation: bg-shimmer 17s ease-in-out infinite alternate;
+  opacity: 0.5;
+  animation:
+    bg-shimmer-warp     23s ease-in-out infinite alternate,
+    bg-shimmer-breathe  13s ease-in-out infinite,
+    bg-shimmer-wisps    31s ease-in-out infinite alternate;
 }
 
 @keyframes bg-drift {
@@ -67,10 +84,39 @@ body {
   100% { transform: translate3d(2%,    1.2%, 0) scale(1.09); }
 }
 
-@keyframes bg-shimmer {
-  0%   { transform: translate3d(0,      0,    0) scale(1.02); filter: blur(24px) brightness(1.08); }
-  50%  { transform: translate3d(0.6%,  -0.4%, 0) scale(1.045); filter: blur(30px) brightness(1.18); }
+/* Slow warp of the whole haze layer — transform + blur depth */
+@keyframes bg-shimmer-warp {
+  0%   { transform: translate3d(-0.3%,  0.2%, 0) scale(1.020); filter: blur(24px) brightness(1.08); }
+  50%  { transform: translate3d( 0.6%, -0.4%, 0) scale(1.045); filter: blur(30px) brightness(1.18); }
   100% { transform: translate3d(-0.5%,  0.5%, 0) scale(1.025); filter: blur(26px) brightness(1.10); }
+}
+
+/* Mist breathing in and out — pure opacity swell, slowest is at the edges */
+@keyframes bg-shimmer-breathe {
+  0%, 100% { opacity: 0.40; }
+  50%      { opacity: 0.62; }
+}
+
+/*
+ * Each wisp gradient drifts to a different point on its own; the photo layer
+ * stays anchored at center. So patches of the haze appear to move while other
+ * parts hold still — not a single rectangle translating.
+ */
+@keyframes bg-shimmer-wisps {
+  0% {
+    background-position:
+      0%   0%,
+      100% 100%,
+      50%  0%,
+      center;
+  }
+  100% {
+    background-position:
+      35% 22%,
+      62% 74%,
+      72% 58%,
+      center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
