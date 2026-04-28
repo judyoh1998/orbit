@@ -90,6 +90,7 @@ export function App() {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
+      <div className="bg" aria-hidden="true" />
       {orbs.map(orb => (
         <Orb
           key={orb.id}

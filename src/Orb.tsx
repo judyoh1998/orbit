@@ -10,7 +10,7 @@ type Props = {
 }
 
 const ORB_SIZE_PX = 220
-const BLUR_PX = 24
+const BLUR_PX = 32
 
 export function Orb({ x, y, width, height, preset }: Props) {
   const audioRef = useRef<OrbAudio | null>(null)
@@ -45,8 +45,9 @@ export function Orb({ x, y, width, height, preset }: Props) {
         height: ORB_SIZE_PX,
         borderRadius: '50%',
         background:
-          `radial-gradient(circle at 50% 50%, rgba(${rgb}, 0.85) 0%, rgba(${rgb}, 0.45) 35%, rgba(${rgb}, 0.15) 65%, rgba(0, 0, 0, 0) 80%)`,
-        filter: `blur(${BLUR_PX}px)`,
+          `radial-gradient(circle at 50% 50%, rgba(${rgb}, 1) 0%, rgba(${rgb}, 0.92) 16%, rgba(${rgb}, 0.6) 38%, rgba(${rgb}, 0.28) 58%, rgba(${rgb}, 0.1) 74%, rgba(0, 0, 0, 0) 86%)`,
+        filter: `blur(${BLUR_PX}px) saturate(1.25)`,
+        mixBlendMode: 'screen', // emit light into the haze instead of sitting on top of it
         pointerEvents: 'none', // canvas handles all gestures so it can decide pickup vs spawn
         touchAction: 'none',
         willChange: 'transform, left, top',
