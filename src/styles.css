@@ -91,3 +91,26 @@ body {
 .hint.hidden {
   opacity: 0;
 }
+
+@keyframes orb-pulse {
+  0%   { transform: rotate(var(--orb-tilt, 0deg)) scale(1.00, 1.00); }
+  15%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.09, 0.93); }
+  30%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.07, 1.07); }
+  45%  { transform: rotate(var(--orb-tilt, 0deg)) scale(0.94, 1.08); }
+  60%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.05, 0.96); }
+  75%  { transform: rotate(var(--orb-tilt, 0deg)) scale(0.93, 0.95); }
+  100% { transform: rotate(var(--orb-tilt, 0deg)) scale(1.00, 1.00); }
+}
+
+.orb {
+  animation-name: orb-pulse;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb {
+    animation: none !important;
+  }
+}
