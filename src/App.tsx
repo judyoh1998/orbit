@@ -3,7 +3,7 @@ import { Orb } from './Orb'
 import { Background } from './Background'
 import { ensureAudioStarted, pickRandomPreset, type Preset } from './audio'
 
-const MAX_ORBS = 5
+const MAX_ORBS = 8
 const PICKUP_RADIUS_PX = 90
 
 type OrbState = {
