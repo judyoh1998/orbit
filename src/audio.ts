@@ -28,7 +28,7 @@ type SamplePreset = {
 type PresetConfig = SynthPreset | SamplePreset
 
 export const PRESETS: Record<Preset, PresetConfig> = {
-  air:    { kind: 'synth',  noise: 'pink',  Q: 0.6, color: '180, 215, 255' }, // light blue
+  air:    { kind: 'sample', url: '/ambient.mp4', Q: 0.7, color: '180, 215, 255' }, // light blue
   static: { kind: 'synth',  noise: 'white', Q: 0.3, color: '200, 160, 240' }, // purple
   bells:  { kind: 'sample', url: '/bells.mp3', Q: 0.7, color: '220, 200, 255' }, // pale lavender
   water:  { kind: 'sample', url: '/water.mp3', Q: 0.7, color: '100, 200, 220' }, // deep teal
