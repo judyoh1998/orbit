@@ -20,11 +20,29 @@ type Blob = {
   ampA: number
   ampB: number
   alpha: number
+  bloom: number
+}
+
+type ActiveEvent = {
+  update: (dt: number) => void
+  draw: (ctx: CanvasRenderingContext2D, mood: number) => void
+  alive: () => boolean
 }
 
 const PALETTE_HUES = [
   208, 220, 232, 252, 268, 282, 300, 322, 350, 18,
 ]
+
+const MOOD_AMPLITUDE = 32
+const MOOD_PERIOD_MIN = 60
+const MOOD_PERIOD_MAX = 90
+const EVENT_GAP_MIN = 15
+const EVENT_GAP_MAX = 40
+const EVENT_FIRST_MIN = 8
+const EVENT_FIRST_MAX = 15
+
+const easeInOutCubic = (x: number): number =>
+  x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
 
 function makeBlobs(width: number, height: number, count: number): Blob[] {
   const blobs: Blob[] = []
@@ -51,9 +69,122 @@ function makeBlobs(width: number, height: number, count: number): Blob[] {
       ampA: minDim * (0.04 + Math.random() * 0.08),
       ampB: minDim * (0.04 + Math.random() * 0.08),
       alpha: 0.45 + Math.random() * 0.35,
+      bloom: 1,
     })
   }
   return blobs
+}
+
+function makeShootingStar(width: number, height: number): ActiveEvent {
+  const minDim = Math.min(width, height)
+  const margin = minDim * 0.1
+  const side = Math.floor(Math.random() * 4)
+  let sx: number
+  let sy: number
+  if (side === 0)      { sx = Math.random() * width; sy = -margin }
+  else if (side === 1) { sx = width + margin;        sy = Math.random() * height * 0.75 }
+  else if (side === 2) { sx = -margin;               sy = Math.random() * height * 0.75 }
+  else                 { sx = Math.random() * width; sy = height + margin }
+
+  const towardCenter = Math.atan2(height * 0.5 - sy, width * 0.5 - sx)
+  const angle = towardCenter + (Math.random() - 0.5) * 1.1
+  const length = minDim * (0.5 + Math.random() * 0.4)
+  const ex = sx + Math.cos(angle) * length
+  const ey = sy + Math.sin(angle) * length
+
+  const mxp = (sx + ex) / 2
+  const myp = (sy + ey) / 2
+  const perpX = -(ey - sy) / length
+  const perpY =  (ex - sx) / length
+  const arcAmt = (Math.random() - 0.5) * length * 0.32
+  const cx = mxp + perpX * arcAmt
+  const cy = myp + perpY * arcAmt
+
+  const sweepDur = 2 + Math.random() * 2
+  const fadeDur = 1.4
+  const baseHue = 200 + Math.random() * 70
+  const samples = 28
+  const tailLen = 0.28
+  let elapsed = 0
+
+  return {
+    update(dt) { elapsed += dt },
+    draw(ctx, mood) {
+      const hue = (baseHue + mood + 360) % 360
+      const u = Math.min(1, elapsed / sweepDur)
+      const fadeU = elapsed > sweepDur ? Math.min(1, (elapsed - sweepDur) / fadeDur) : 0
+      const trailAlpha = 1 - fadeU
+
+      for (let i = 1; i < samples; i++) {
+        const tu = u - (i / samples) * tailLen
+        if (tu < 0) break
+        const omu = 1 - tu
+        const ux = omu * omu * sx + 2 * omu * tu * cx + tu * tu * ex
+        const uy = omu * omu * sy + 2 * omu * tu * cy + tu * tu * ey
+        const fade = (1 - i / samples) * trailAlpha
+        const r = 12 * fade + 1.5
+        const g = ctx.createRadialGradient(ux, uy, 0, ux, uy, r)
+        g.addColorStop(0,   `hsla(${hue}, 90%, 88%, ${0.55 * fade})`)
+        g.addColorStop(0.5, `hsla(${hue}, 95%, 65%, ${0.22 * fade})`)
+        g.addColorStop(1,   `hsla(${hue}, 95%, 50%, 0)`)
+        ctx.fillStyle = g
+        ctx.beginPath()
+        ctx.arc(ux, uy, r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      if (elapsed < sweepDur) {
+        const omu = 1 - u
+        const hx = omu * omu * sx + 2 * omu * u * cx + u * u * ex
+        const hy = omu * omu * sy + 2 * omu * u * cy + u * u * ey
+        const headR = 22
+        const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, headR)
+        g.addColorStop(0,    `hsla(${hue}, 95%, 95%, 0.9)`)
+        g.addColorStop(0.35, `hsla(${hue}, 95%, 75%, 0.4)`)
+        g.addColorStop(1,    `hsla(${hue}, 95%, 55%, 0)`)
+        ctx.fillStyle = g
+        ctx.beginPath()
+        ctx.arc(hx, hy, headR, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    },
+    alive() { return elapsed < sweepDur + fadeDur },
+  }
+}
+
+function makeBloom(blobs: Blob[]): ActiveEvent | null {
+  if (blobs.length === 0) return null
+  const order: number[] = []
+  for (let i = 0; i < blobs.length; i++) order.push(i)
+  order.sort((a, b) => blobs[a].baseR * blobs[a].alpha - blobs[b].baseR * blobs[b].alpha)
+  const half = Math.max(1, Math.floor(order.length / 2))
+  const picked = blobs[order[Math.floor(Math.random() * half)]]
+
+  const swellDur = 3
+  const holdDur = 1
+  const releaseDur = 4
+  const total = swellDur + holdDur + releaseDur
+  const peak = 2.0
+  let elapsed = 0
+
+  return {
+    update(dt) {
+      elapsed += dt
+      let m: number
+      if (elapsed >= total) {
+        m = 1
+      } else if (elapsed < swellDur) {
+        m = 1 + (peak - 1) * easeInOutCubic(elapsed / swellDur)
+      } else if (elapsed < swellDur + holdDur) {
+        m = peak
+      } else {
+        m = peak - (peak - 1) * easeInOutCubic((elapsed - swellDur - holdDur) / releaseDur)
+      }
+      picked.bloom = m
+    },
+    draw() {},
+    alive() { return elapsed < total },
+  }
 }
 
 export function Background() {
@@ -76,6 +207,7 @@ export function Background() {
     let width = window.innerWidth
     let height = window.innerHeight
     let blobs: Blob[] = []
+    const events: ActiveEvent[] = []
 
     const blobCountForSize = (w: number, h: number) => {
       const area = w * h
@@ -102,6 +234,8 @@ export function Background() {
         }
       }
       blobs = next
+      // Drop any in-flight bloom whose target blob just got replaced.
+      events.length = 0
     }
     resize()
     window.addEventListener('resize', resize)
@@ -122,6 +256,14 @@ export function Background() {
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerdown', onPointerMove, { passive: true })
 
+    const startTime = performance.now() / 1000
+    const moodPhase = Math.random() * Math.PI * 2
+    const moodFreq = (Math.PI * 2) /
+      (MOOD_PERIOD_MIN + Math.random() * (MOOD_PERIOD_MAX - MOOD_PERIOD_MIN))
+    const frozenMood = Math.sin(moodPhase) * MOOD_AMPLITUDE
+    let nextEventAt =
+      startTime + EVENT_FIRST_MIN + Math.random() * (EVENT_FIRST_MAX - EVENT_FIRST_MIN)
+
     let raf = 0
     let lastFrame = performance.now()
 
@@ -129,6 +271,24 @@ export function Background() {
       const dt = Math.min(0.05, Math.max(0.001, (now - lastFrame) / 1000))
       lastFrame = now
       const t = now / 1000
+
+      const mood = reduced
+        ? frozenMood
+        : Math.sin(t * moodFreq + moodPhase) * MOOD_AMPLITUDE
+
+      if (!reduced && events.length === 0 && t >= nextEventAt) {
+        const ev = Math.random() < 0.5
+          ? makeShootingStar(width, height)
+          : makeBloom(blobs)
+        if (ev) events.push(ev)
+      }
+      for (let i = events.length - 1; i >= 0; i--) {
+        events[i].update(dt)
+        if (!events[i].alive()) {
+          events.splice(i, 1)
+          nextEventAt = t + EVENT_GAP_MIN + Math.random() * (EVENT_GAP_MAX - EVENT_GAP_MIN)
+        }
+      }
 
       smoothMX += (mouseX - smoothMX) * Math.min(1, dt * 18)
       smoothMY += (mouseY - smoothMY) * Math.min(1, dt * 18)
@@ -205,18 +365,23 @@ export function Background() {
           1 +
           b.pulseDepth * Math.sin(t * b.pulseRate + b.pulsePhase) +
           b.pulseDepth * 0.35 * Math.sin(t * b.pulseRate * 2.7 + b.pulsePhase * 1.3)
-        const r = b.baseR * pulse
+        const r = b.baseR * pulse * b.bloom
+        const a = b.alpha * b.bloom
 
-        const hue = (b.hue + Math.sin(t * 0.1 + b.pulsePhase) * b.hueDrift + 360) % 360
+        const hue = (b.hue + mood + Math.sin(t * 0.1 + b.pulsePhase) * b.hueDrift + 360) % 360
         const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r)
-        g.addColorStop(0, `hsla(${hue}, 85%, 62%, ${b.alpha * 0.7})`)
-        g.addColorStop(0.35, `hsla(${(hue + 18) % 360}, 90%, 48%, ${b.alpha * 0.32})`)
-        g.addColorStop(0.7, `hsla(${(hue + 32) % 360}, 90%, 30%, ${b.alpha * 0.08})`)
+        g.addColorStop(0, `hsla(${hue}, 85%, 62%, ${a * 0.7})`)
+        g.addColorStop(0.35, `hsla(${(hue + 18) % 360}, 90%, 48%, ${a * 0.32})`)
+        g.addColorStop(0.7, `hsla(${(hue + 32) % 360}, 90%, 30%, ${a * 0.08})`)
         g.addColorStop(1, `hsla(${hue}, 90%, 20%, 0)`)
         ctx.fillStyle = g
         ctx.beginPath()
         ctx.arc(b.x, b.y, r, 0, Math.PI * 2)
         ctx.fill()
+      }
+
+      for (let i = 0; i < events.length; i++) {
+        events[i].draw(ctx, mood)
       }
 
       ctx.globalCompositeOperation = 'source-over'
