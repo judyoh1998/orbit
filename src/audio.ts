@@ -3,8 +3,8 @@ import * as Tone from 'tone'
 const SMOOTHING_MS = 0.05 // 50ms ramp on parameter changes
 const FILTER_MIN_HZ = 200
 const FILTER_MAX_HZ = 8000
-const SYNTH_VOLUME_DB = -22 // each synth orb's noise level; 5 stacked stays comfortable
-const SAMPLE_VOLUME_DB = -28 // samples are denser/louder than noise, so trim further
+const SYNTH_VOLUME_DB = -30 // each synth orb's noise level; 5 stacked stays comfortable
+const SAMPLE_VOLUME_DB = -20 // sample orbs sit louder so they aren't drowned by the noise presets
 const SAMPLE_LOOP_CROSSFADE_S = 0.5 // fade-in/fade-out applied to each loop iteration
 const REVERB_DECAY_S = 4
 const REVERB_WET = 0.4
