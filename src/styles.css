@@ -94,11 +94,11 @@ body {
 
 @keyframes orb-pulse {
   0%   { transform: rotate(var(--orb-tilt, 0deg)) scale(1.00, 1.00); }
-  15%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.09, 0.93); }
+  15%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.09, 0.65); }
   30%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.07, 1.07); }
-  45%  { transform: rotate(var(--orb-tilt, 0deg)) scale(0.94, 1.08); }
-  60%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.05, 0.96); }
-  75%  { transform: rotate(var(--orb-tilt, 0deg)) scale(0.93, 0.95); }
+  45%  { transform: rotate(var(--orb-tilt, 0deg)) scale(0.55, 1.09); }
+  60%  { transform: rotate(var(--orb-tilt, 0deg)) scale(1.05, 0.70); }
+  75%  { transform: rotate(var(--orb-tilt, 0deg)) scale(0.50, 0.55); }
   100% { transform: rotate(var(--orb-tilt, 0deg)) scale(1.00, 1.00); }
 }
 
