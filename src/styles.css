@@ -48,12 +48,12 @@ body {
 }
 
 .bg-photo {
-  filter: blur(2px) saturate(1.15) brightness(0.7);
+  filter: blur(0px) saturate(1.1) brightness(1.0);
 }
 
 .bg-haze {
-  filter: blur(28px) brightness(1.2);
-  opacity: 0.55;
+  filter: blur(12px) brightness(1.1);
+  opacity: 0.15;
   mix-blend-mode: screen;
 }
 
